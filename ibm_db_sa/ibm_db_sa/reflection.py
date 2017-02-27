@@ -628,9 +628,7 @@ class AS400Reflector(BaseReflector):
         table_name = self.denormalize_name(table_name)
         sysconst = self.sys_table_constraints
         syskeyconst = self.sys_key_constraints
-
-        query = sql.select([syskeyconst.c.col])
-
+        
         query = sql.select([syskeyconst.c.colname, sysconst.c.tabname],
                 sql.and_(
                     syskeyconst.c.conschema == sysconst.c.conschema,
@@ -741,4 +739,4 @@ class AS400Reflector(BaseReflector):
                         'column_names': [self.normalize_name(r[1])],
                     })
         return uniqueConsts
-        
+
