@@ -33,12 +33,14 @@ from sqlalchemy.connectors.zxJDBC import ZxJDBCConnector
 from .base import _SelectLastRowIDMixin, DB2Dialect, DB2ExecutionContext, DB2Compiler
 from . import reflection as ibm_reflection
 
+
 class DB2ExecutionContext_zxjdbc(_SelectLastRowIDMixin, DB2ExecutionContext):
 
     def create_cursor(self):
         cursor = self._dbapi_connection.cursor()
         cursor.datahandler = self.dialect.DataHandler(cursor.datahandler)
         return cursor
+
 
 class BaseDB2Dialect_zxjdbc(ZxJDBCConnector, DB2Dialect):
 
@@ -48,7 +50,7 @@ class BaseDB2Dialect_zxjdbc(ZxJDBCConnector, DB2Dialect):
 
     supports_unicode_statements = False
     supports_sane_rowcount = True
-    supports_char_length = True    
+    supports_char_length = True
 
     statement_compiler = DB2Compiler
     execution_ctx_cls = DB2ExecutionContext_zxjdbc
@@ -67,18 +69,23 @@ class BaseDB2Dialect_zxjdbc(ZxJDBCConnector, DB2Dialect):
             def setJDBCObject(self, statement, index, object, dbtype=None):
                 if dbtype is None:
                     if (isinstance(object, int)):
-                        statement.setObject(index, str(object), java_Types.INTEGER)
+                        statement.setObject(
+                            index, str(object), java_Types.INTEGER)
                     elif (isinstance(object, long)):
-                        statement.setObject(index, str(object), java_Types.BIGINT)
+                        statement.setObject(
+                            index, str(object), java_Types.BIGINT)
                     elif (isinstance(object, _python_Decimal)):
-                        statement.setObject(index, str(object), java_Types.DECIMAL)
+                        statement.setObject(
+                            index, str(object), java_Types.DECIMAL)
                     else:
                         statement.setObject(index, object)
                 else:
-                    FilterDataHandler.setJDBCObject(self, statement, index, object, dbtype)
+                    FilterDataHandler.setJDBCObject(
+                        self, statement, index, object, dbtype)
 
         cls.DataHandler = IBM_DB2DataHandler
         return zxJDBC
+
 
 class DB2Dialect_zxjdbc(BaseDB2Dialect_zxjdbc):
 	jdbc_db_name = 'db2'

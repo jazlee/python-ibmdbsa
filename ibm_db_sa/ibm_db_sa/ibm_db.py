@@ -28,7 +28,9 @@ if SA_Version < [0, 8]:
 else:
     from sqlalchemy.engine import result as _result
 
+
 class _IBM_Numeric_ibm_db(sa_types.Numeric):
+
     def result_processor(self, dialect, coltype):
         if self.asdecimal:
             return None
@@ -43,7 +45,6 @@ class DB2ExecutionContext_ibm_db(DB2ExecutionContext):
     def get_lastrowid(self):
         return self.cursor.last_identity_val
 
-
     def pre_exec(self):
         # if a single execute, check for outparams
         if len(self.compiled_parameters) == 1:
@@ -51,7 +52,7 @@ class DB2ExecutionContext_ibm_db(DB2ExecutionContext):
                 if bindparam.isoutparam:
                     self._out_parameters = True
                     break
-                
+
     def get_result_proxy(self):
         if self._callproc_result and self._out_parameters:
             if SA_Version < [0, 8]:
@@ -59,12 +60,13 @@ class DB2ExecutionContext_ibm_db(DB2ExecutionContext):
             else:
                 result = _result.ResultProxy(self)
             result.out_parameters = {}
-            
+
             for bindparam in self.compiled.binds.values():
                 if bindparam.isoutparam:
                     name = self.compiled.bind_names[bindparam]
-                    result.out_parameters[name] = self._callproc_result[self.compiled.positiontup.index(name)]
-            
+                    result.out_parameters[name] = self._callproc_result[
+                        self.compiled.positiontup.index(name)]
+
             return result
         else:
             if SA_Version < [0, 8]:
@@ -72,7 +74,8 @@ class DB2ExecutionContext_ibm_db(DB2ExecutionContext):
             else:
                 result = _result.ResultProxy(self)
             return result
-         
+
+
 class DB2Dialect_ibm_db(DB2Dialect):
 
     driver = 'ibm_db_sa'
@@ -108,17 +111,17 @@ class DB2Dialect_ibm_db(DB2Dialect):
 
     def _get_server_version_info(self, connection):
         return connection.connection.server_info()
-        
-    _isolation_lookup = set(['READ STABILITY','RS', 'UNCOMMITTED READ','UR',
-                             'CURSOR STABILITY','CS', 'REPEATABLE READ','RR'])
-   
-    def set_isolation_level(self, connection, level):    
-        if level is  None:
-         level ='CS' 
-        else :
-          if len(level.strip()) < 1:
-            level ='CS'
-        level.upper().replace("-", " ")   
+
+    _isolation_lookup = set(['READ STABILITY', 'RS', 'UNCOMMITTED READ', 'UR',
+                             'CURSOR STABILITY', 'CS', 'REPEATABLE READ', 'RR'])
+
+    def set_isolation_level(self, connection, level):
+        if level is None:
+            level = 'CS'
+        else:
+            if len(level.strip()) < 1:
+                level = 'CS'
+        level.upper().replace("-", " ")
         if level not in self._isolation_lookup:
             raise ArgumentError(
                 "Invalid value '%s' for isolation_level. "
@@ -129,7 +132,7 @@ class DB2Dialect_ibm_db(DB2Dialect):
         cursor.execute("SET CURRENT ISOLATION %s" % level)
         cursor.execute("COMMIT")
         cursor.close()
-        
+
     def get_isolation_level(self, connection):
         cursor = connection.cursor()
         cursor.execute('SELECT CURRENT ISOLATION FROM sysibm.sysdummy1')
@@ -138,10 +141,10 @@ class DB2Dialect_ibm_db(DB2Dialect):
         if util.py3k and isinstance(val, bytes):
             val = val.decode()
         return val
-    
+
     def reset_isolation_level(self, connection):
-        self.set_isolation_level(connection,'CS')
-        
+        self.set_isolation_level(connection, 'CS')
+
     def create_connect_args(self, url):
         # DSN support through CLI configuration (../cfg/db2cli.ini),
         # while 2 connection attributes are mandatory: database alias
@@ -167,20 +170,21 @@ class DB2Dialect_ibm_db(DB2Dialect):
                 dsn_param.append('UID=%s' % url.username)
             if url.password:
                 if ';' in url.password:
-                    url.password=(url.password).partition(";")[0]
+                    url.password = (url.password).partition(";")[0]
                 dsn_param.append('PWD=%s' % url.password)
-            
-            #check for SSL arguments
+
+            # check for SSL arguments
             ssl_keys = ['Security', 'SSLClientKeystoredb', 'SSLClientKeystash']
             query_keys = url.query.keys()
             for key in ssl_keys:
                 for query_key in query_keys:
                     if query_key.lower() == key.lower():
-                        dsn_param.append('%(ssl_key)s=%(value)s' % {'ssl_key': key, 'value': url.query[query_key]})
+                        dsn_param.append('%(ssl_key)s=%(value)s' % {
+                                         'ssl_key': key, 'value': url.query[query_key]})
                         del url.query[query_key]
                         break
-                           
-            dsn = ';'.join(dsn_param)      
+
+            dsn = ';'.join(dsn_param)
             dsn += ';'
             return ((dsn, url.username, '', '', ''), {})
 
@@ -188,12 +192,12 @@ class DB2Dialect_ibm_db(DB2Dialect):
     def _get_default_schema_name(self, connection):
         return self.normalize_name(connection.connection.get_current_schema())
 
-
     # Checks if the DB_API driver error indicates an invalid connection
     def is_disconnect(self, ex, connection, cursor):
         if isinstance(ex, (self.dbapi.ProgrammingError,
-                                             self.dbapi.OperationalError)):
-            connection_errors = ('Connection is not active', 'connection is no longer active',
+                           self.dbapi.OperationalError)):
+            connection_errors = (
+                'Connection is not active', 'connection is no longer active',
                                     'Connection Resource cannot be found', 'SQL30081N'
                                     'CLI0108E', 'CLI0106E', 'SQL1224N')
             for err_msg in connection_errors:

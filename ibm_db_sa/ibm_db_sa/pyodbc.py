@@ -26,6 +26,7 @@ from . import reflection as ibm_reflection
 class DB2ExecutionContext_pyodbc(_SelectLastRowIDMixin, DB2ExecutionContext):
     pass
 
+
 class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
 
     supports_unicode_statements = False
@@ -35,14 +36,14 @@ class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
     execution_ctx_cls = DB2ExecutionContext_pyodbc
 
     pyodbc_driver_name = "IBM DB2 ODBC DRIVER"
-    
-    def set_isolation_level(self, connection, level):    
-        if level is  None:
-         level ='CS' 
-        else :
-          if len(level.strip()) < 1:
-            level ='CS'
-        level.upper().replace("-", " ")   
+
+    def set_isolation_level(self, connection, level):
+        if level is None:
+            level = 'CS'
+        else:
+            if len(level.strip()) < 1:
+                level = 'CS'
+        level.upper().replace("-", " ")
         if level not in self._isolation_lookup:
             raise ArgumentError(
                 "Invalid value '%s' for isolation_level. "
@@ -53,7 +54,7 @@ class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
         cursor.execute("SET CURRENT ISOLATION %s" % level)
         cursor.execute("COMMIT")
         cursor.close()
-        
+
     def get_isolation_level(self, connection):
         cursor = connection.cursor()
         cursor.execute('SELECT CURRENT ISOLATION FROM sysibm.sysdummy1')
@@ -62,9 +63,9 @@ class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
         if util.py3k and isinstance(val, bytes):
             val = val.decode()
         return val
-    
+
     def reset_isolation_level(self, connection):
-        self.set_isolation_level(connection,'CS')
+        self.set_isolation_level(connection, 'CS')
 
     def create_connect_args(self, url):
         opts = url.translate_connect_args(username='user')
@@ -82,10 +83,10 @@ class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
             connectors = [urllib.unquote_plus(keys.pop('odbc_connect'))]
         else:
             dsn_connection = 'dsn' in keys or \
-                                    ('host' in keys and 'database' not in keys)
+                ('host' in keys and 'database' not in keys)
             if dsn_connection:
-                connectors = ['dsn=%s' % (keys.pop('host', '') or \
-                                            keys.pop('dsn', ''))]
+                connectors = ['dsn=%s' % (keys.pop('host', '') or
+                                          keys.pop('dsn', ''))]
             else:
                 port = ''
                 if 'port' in keys and not 'port' in query:
@@ -94,9 +95,10 @@ class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
                 database = keys.pop('database', '')
 
                 connectors = ["DRIVER={%s}" %
-                                keys.pop('driver', self.pyodbc_driver_name),
-                            'hostname=%s;port=%s' % (keys.pop('host', ''), port),
-                            'database=%s' % database]
+                              keys.pop('driver', self.pyodbc_driver_name),
+                              'hostname=%s;port=%s' % (
+                                  keys.pop('host', ''), port),
+                              'database=%s' % database]
 
             user = keys.pop("user", None)
             if user:
@@ -111,11 +113,12 @@ class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
             # you query a cp1253 encoded database from a latin1 client...
             if 'odbc_autotranslate' in keys:
                 connectors.append("autotranslate=%s" %
-                                        keys.pop("odbc_autotranslate"))
+                                  keys.pop("odbc_autotranslate"))
 
             connectors.extend(['%s=%s' % (k, v)
-                                    for k, v in keys.iteritems()])
+                               for k, v in keys.iteritems()])
         return [[";".join(connectors)], connect_args]
+
 
 class AS400Dialect_pyodbc(PyODBCConnector, DB2Dialect):
 
@@ -139,42 +142,43 @@ class AS400Dialect_pyodbc(PyODBCConnector, DB2Dialect):
 
         connect_args = {}
         for param in ('ansi', 'unicode_results', 'autocommit'):
-          if param in keys:
-            connect_args[param] = asbool(keys.pop(param))
+            if param in keys:
+                connect_args[param] = asbool(keys.pop(param))
 
         if 'odbc_connect' in keys:
-          connectors = [urllib.unquote_plus(keys.pop('odbc_connect'))]
+            connectors = [urllib.unquote_plus(keys.pop('odbc_connect'))]
         else:
-          dsn_connection = 'dsn' in keys or \
-                                    ('host' in keys and 'database' not in keys)
-          if dsn_connection:
-              connectors = ['dsn=%s' % (keys.pop('host', '') or \
-                                            keys.pop('dsn', ''))]
-          else:
-              connectors = ["DRIVER={%s}" % keys.pop('driver', self.pyodbc_driver_name),
-                            'System=%s' % keys.pop('host', ''),
-                            'DBQ=QGPL']
-              connectors.append("PKG=QGPL/DEFAULT(IBM),2,0,1,0,512")
-              connectors.append("CMT=0")
-              db_name = keys.pop('database', '')
-              if db_name:
-                connectors.append("DATABASE=%s" % db_name)
+            dsn_connection = 'dsn' in keys or \
+                ('host' in keys and 'database' not in keys)
+            if dsn_connection:
+                connectors = ['dsn=%s' % (keys.pop('host', '') or
+                                          keys.pop('dsn', ''))]
+            else:
+                connectors = [
+                    "DRIVER={%s}" % keys.pop(
+                        'driver', self.pyodbc_driver_name),
+                              'System=%s' % keys.pop('host', ''),
+                              'DBQ=QGPL']
+                connectors.append("PKG=QGPL/DEFAULT(IBM),2,0,1,0,512")
+                connectors.append("CMT=0")
+                db_name = keys.pop('database', '')
+                if db_name:
+                    connectors.append("DATABASE=%s" % db_name)
 
-          user = keys.pop("user", None)
-          if user:
-              connectors.append("UID=%s" % user)
-              connectors.append("PWD=%s" % keys.pop('password', ''))
-          else:
-              connectors.append("trusted_connection=yes")
+            user = keys.pop("user", None)
+            if user:
+                connectors.append("UID=%s" % user)
+                connectors.append("PWD=%s" % keys.pop('password', ''))
+            else:
+                connectors.append("trusted_connection=yes")
 
-          # if set to 'Yes', the ODBC layer will try to automagically convert
-          # textual data from your database encoding to your client encoding
-          # This should obviously be set to 'No' if you query a cp1253 encoded
-          # database from a latin1 client...
-          if 'odbc_autotranslate' in keys:
-              connectors.append("AutoTranslate=%s" % keys.pop("odbc_autotranslate"))
+            # if set to 'Yes', the ODBC layer will try to automagically convert
+            # textual data from your database encoding to your client encoding
+            # This should obviously be set to 'No' if you query a cp1253 encoded
+            # database from a latin1 client...
+            if 'odbc_autotranslate' in keys:
+                connectors.append(
+                    "AutoTranslate=%s" % keys.pop("odbc_autotranslate"))
 
-          connectors.extend(['%s=%s' % (k,v) for k,v in keys.iteritems()])
-        return [[";".join (connectors)], connect_args]
-
-
+            connectors.extend(['%s=%s' % (k, v) for k, v in keys.iteritems()])
+        return [[";".join(connectors)], connect_args]
